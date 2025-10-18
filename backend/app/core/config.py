@@ -1,20 +1,19 @@
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
 
 
 class Settings(BaseSettings):
-    """Application settings and configuration"""
     
     # API Keys
     google_places_api_key: Optional[str] = None
     two_gis_api_key: Optional[str] = None
-    
-    # Database settings
-    database_url: str = "sqlite:///./travel_places.db"
+
+    database_url: str
     
     # Redis settings (for caching)
-    redis_url: str = "redis://localhost:6379"
+    redis_url: str
     
     # API settings
     api_host: str = "0.0.0.0"

@@ -27,7 +27,7 @@ async def parse_places(
 ) -> List[Place]:
     """
     Parse travel-related places from Google Places and 2GIS APIs
-    
+
     Args:
         lat: Latitude coordinate
         lng: Longitude coordinate

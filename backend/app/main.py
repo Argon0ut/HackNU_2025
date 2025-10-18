@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from app.api.routes.parser import router as parser_router
 from dotenv import load_dotenv
+from app.core.config import settings
+
 import os
 
 # Load environment variables from .env file
