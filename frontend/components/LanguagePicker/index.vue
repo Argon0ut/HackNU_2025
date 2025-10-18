@@ -1,9 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import { useI18n } from "vue-i18n";
 
 const i18n = useI18n();
-const items = ref(["Backlog", "Todo", "In Progress", "Done"]);
-const value = ref("Backlog");
 
 const metadata = computed(() => {
   if (i18n.locale.value === "ru") {
@@ -31,28 +29,34 @@ const metadata = computed(() => {
     };
   }
 });
+
 const langs = [
   {
-    id: "KZ",
     value: "kz",
-    name: "Қазақша",
+    label: "kz",
   },
   {
-    id: "RU",
     value: "ru",
-    name: "Русский",
+    label: "ru",
   },
   {
-    id: "EN",
     value: "en",
-    name: "English",
+    label: "en",
   },
 ];
+
+// Set initial language on client side only
+onMounted(() => {
+  if (document) {
+    document.documentElement.lang = i18n.locale.value;
+  }
+});
 
 watch(
   () => i18n.locale.value,
   (locale) => {
     document.documentElement.lang = locale;
+
     useCookie("locale").value = locale;
 
     useHead({
@@ -69,23 +73,27 @@ watch(
 </script>
 
 <template>
-  <USelectMenu
-    v-model="$i18n.locale"
-    :items="langs"
-    value-attribute="value"
-    option-attribute="id"
-    size="lg"
-    :ui-menu="{
-      width: 'w-32',
-      padding: 'px-2 py-2',
-      ring: 'ring-black',
-    }"
-  >
-    <template #default>
-      <UButton color="black" variant="outline" :label="$i18n.locale" />
-    </template>
-    <template #option="{ option: language }">
-      <p>{{ language.name }}</p>
-    </template>
-  </USelectMenu>
+  <div>
+    <USelect
+      v-model="$i18n.locale"
+      :items="langs"
+      value-attribute="id"
+      option-attribute="id"
+      size="lg"
+      :ui-menu="{
+        width: 'w-32',
+        padding: 'px-2 py-2',
+        ring: 'ring-black',
+      }"
+    >
+      <template #default>
+        <UButton color="black" variant="outline" :label="$i18n.locale" />
+      </template>
+      <template #option="{ option: language }">
+        <p>{{ language.name }}</p>
+      </template>
+    </USelect>
+
+    {{ $t("welcome") }}
+  </div>
 </template>
