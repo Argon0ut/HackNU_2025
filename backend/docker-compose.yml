@@ -39,7 +39,7 @@ services:
       # API Settings
       API_HOST: 0.0.0.0
       API_PORT: 8000
-      API_DEBUG: false
+      API_DEBUG: True
       
       # Search Settings
       DEFAULT_SEARCH_RADIUS: 50000

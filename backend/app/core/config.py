@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     # API settings
     api_host: str = "0.0.0.0"
     api_port: int = 8000
-    api_debug: bool = False
+    api_debug: bool = True
     
     # Search settings
     default_search_radius: int = 50000  # meters
