@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
+import json
 from app.models.place import Place
 from app.services.google_places_service import GooglePlacesService
 from app.services.two_gis_service import TwoGisService
 from app.services.classification_service import ClassificationService
+from app.services.database_service import DatabaseService
 
 router = APIRouter(prefix="/api", tags=["parser"])
 
@@ -11,6 +13,7 @@ router = APIRouter(prefix="/api", tags=["parser"])
 google_places_service = GooglePlacesService()
 two_gis_service = TwoGisService()
 classification_service = ClassificationService()
+database_service = DatabaseService()
 
 
 @router.get("/parse_places", response_model=List[Place])
@@ -66,6 +69,12 @@ async def parse_places(
         
         # Remove duplicates based on name and coordinates
         unique_places = _remove_duplicates(classified_places)
+        
+        # Save to database
+        try:
+            database_service.save_places(unique_places, source="api")
+        except Exception as e:
+            print(f"Warning: Could not save to database: {e}")
         
         return unique_places
         
@@ -177,3 +186,62 @@ def _remove_duplicates(places: List[Place]) -> List[Place]:
             unique_places.append(place)
             
     return unique_places
+
+
+@router.get("/database/stats")
+async def get_database_stats():
+    """Get database statistics"""
+    try:
+        stats = database_service.get_database_stats()
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting database stats: {str(e)}")
+
+
+@router.get("/database/places")
+async def get_database_places(
+    category: Optional[str] = Query(None, description="Filter by category"),
+    source: Optional[str] = Query(None, description="Filter by source (google, 2gis)"),
+    lat: Optional[float] = Query(None, description="Latitude for nearby search"),
+    lng: Optional[float] = Query(None, description="Longitude for nearby search"),
+    radius: Optional[float] = Query(50, description="Search radius in km")
+):
+    """Get places from database with optional filters"""
+    try:
+        if lat and lng:
+            places = database_service.get_places_nearby(lat, lng, radius)
+        elif category:
+            places = database_service.get_places_by_category(category)
+        elif source:
+            places = database_service.get_places_by_source(source)
+        else:
+            places = database_service.get_all_places()
+        
+        # Convert to dict format for JSON response
+        result = []
+        for place in places:
+            place_dict = {
+                "id": place.id,
+                "name": place.name,
+                "coordinates": [place.latitude, place.longitude],
+                "address": place.address,
+                "category": place.category,
+                "contact": place.contact,
+                "website": place.website,
+                "description": place.description,
+                "rooms_count": place.rooms_count,
+                "price_range": place.price_range,
+                "photos": json.loads(place.photos) if place.photos else [],
+                "rating": place.rating,
+                "infrastructure": json.loads(place.infrastructure) if place.infrastructure else [],
+                "verification_status": place.verification_status,
+                "source": place.source,
+                "created_at": place.created_at.isoformat() if place.created_at else None,
+                "updated_at": place.updated_at.isoformat() if place.updated_at else None
+            }
+            result.append(place_dict)
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting database places: {str(e)}")
