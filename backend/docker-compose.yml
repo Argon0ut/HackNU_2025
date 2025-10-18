@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: travel_places_db
+    environment:
+      POSTGRES_DB: mytravel
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: woow
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mytravel"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - travel_network
+
+  # FastAPI Application
+  app:
+    build: .
+    container_name: travel_places_api
+    ports:
+      - "8000:8000"
+    environment:
+      # Database
+      DATABASE_URL: postgresql+psycopg2://postgres:woow@postgres:5432/mytravel
+      
+      # API Keys (set these in .env file)
+      GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY}
+      TWO_GIS_API_KEY: ${TWO_GIS_API_KEY}
+      
+      # API Settings
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      API_DEBUG: false
+      
+      # Search Settings
+      DEFAULT_SEARCH_RADIUS: 50000
+      MAX_RESULTS_PER_SOURCE: 20
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - travel_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  travel_network:
+    driver: bridge
