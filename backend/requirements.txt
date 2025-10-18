@@ -9,3 +9,4 @@ requests==2.32.3
 redis==5.0.8
 celery==5.4.0
 python-multipart==0.0.9
+pydantic-settings==2.0.3
